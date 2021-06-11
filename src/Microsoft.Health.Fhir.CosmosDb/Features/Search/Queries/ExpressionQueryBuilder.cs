@@ -90,8 +90,17 @@ namespace Microsoft.Health.Fhir.CosmosDb.Features.Search.Queries
                 case SearchParameterNames.ResourceType:
                     // We do not currently support specifying the system for the _type parameter value.
                     // We would need to add it to the document, but for now it seems pretty unlikely that it will
-                    // be specified when searching.
-                    expression.Expression.AcceptVisitor(this, context.WithFieldNameOverride((n, i) => SearchValueConstants.RootResourceTypeName));
+
+                    if (expression.Expression is StringExpression se)
+                    {
+                        new StringExpression(StringOperator.StartsWith, FieldName.String, se.ComponentIndex, $"{se.Value}_", false)
+                            .AcceptVisitor(this, context.WithFieldNameOverride((n, i) => "partitionKey"));
+                    }
+                    else
+                    {
+                        expression.Expression.AcceptVisitor(this, context.WithFieldNameOverride((n, i) => SearchValueConstants.RootResourceTypeName));
+                    }
+
                     break;
                 case SearchParameterNames.Id:
                     expression.Expression.AcceptVisitor(this, context.WithFieldNameOverride((n, i) => KnownResourceWrapperProperties.ResourceId));
