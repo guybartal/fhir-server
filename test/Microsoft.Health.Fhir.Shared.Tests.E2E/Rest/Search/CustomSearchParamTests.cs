@@ -447,6 +447,7 @@ namespace Microsoft.Health.Fhir.Tests.E2E.Rest.Search
             }
             catch (FhirException ex) when (ex.StatusCode == HttpStatusCode.BadRequest && ex.Message.Contains("not enabled"))
             {
+                _output.WriteLine($"Skipping because reindex is disabled.");
                 Skip.If(!_fixture.IsUsingInProcTestServer, "Reindex is not enabled on this server.");
                 return;
             }
@@ -482,11 +483,23 @@ namespace Microsoft.Health.Fhir.Tests.E2E.Rest.Search
 
         private async Task DeleteSearchParameterAndVerify(SearchParameter searchParam)
         {
-            if (searchParam != null)
+            try
             {
-                await Client.DeleteAsync(searchParam);
-                var ex = await Assert.ThrowsAsync<FhirException>(() => Client.ReadAsync<SearchParameter>(ResourceType.SearchParameter, searchParam.Id));
-                Assert.Contains("Gone", ex.Message);
+                if (searchParam != null)
+                {
+                    await Client.DeleteAsync(searchParam);
+                    var ex = await Assert.ThrowsAsync<FhirException>(() => Client.ReadAsync<SearchParameter>(ResourceType.SearchParameter, searchParam.Id));
+                    Assert.Contains("Gone", ex.Message);
+                }
+            }
+            catch (FhirException ex)
+            {
+                foreach (var issue in ex.OperationOutcome.Issue)
+                {
+                    _output.WriteLine("Issue: {message}", issue.Diagnostics);
+                }
+
+                throw;
             }
         }
     }
