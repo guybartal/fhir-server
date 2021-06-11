@@ -496,7 +496,7 @@ namespace Microsoft.Health.Fhir.Tests.E2E.Rest.Search
             {
                 foreach (var issue in ex.OperationOutcome.Issue)
                 {
-                    _output.WriteLine("Issue: {message}", issue.Diagnostics);
+                    _output.WriteLine($"Issue: {issue.Diagnostics}");
                 }
 
                 throw;
